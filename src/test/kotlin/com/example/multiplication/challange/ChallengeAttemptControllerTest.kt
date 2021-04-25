@@ -4,8 +4,8 @@ import com.example.multiplication.users.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers
-import org.mockito.BDDMockito.given
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.given
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -32,14 +32,13 @@ open class ChallengeAttemptControllerTest {
   private var jsonResultAttempt: JacksonTester<ChallengeAttempt>? = null
 
   @Test
-  fun `Should validate POST result`() {
+  fun `Should validate successful POST result`() {
     // Given
     val user = User(1, "john")
     val attemptId = 5L
     val attemptDTO = ChallengeAttemptDTO(50, 70, user.alias, 3500)
     val expectedResponse = ChallengeAttempt(attemptId, user, 50, 70, 3500, true)
-    // todo fix it
-    given(challengeService!!.verifyAttempt(ArgumentMatchers.eq(attemptDTO)))
+    given(challengeService!!.verifyAttempt(eq(attemptDTO)))
       .willReturn(expectedResponse)
 
     // When
@@ -56,6 +55,19 @@ open class ChallengeAttemptControllerTest {
     )
   }
 
-  // TODO add negative scenario test
+  @Test
+  fun `Should return bad request for invalid input data POST`() {
+    // Given
+    val user = User(1, "john")
+    val attemptDTO = ChallengeAttemptDTO(20000, -55, user.alias, 1)
+
+    // When
+    val response = mvc!!.perform(
+      post("/attempts").contentType(MediaType.APPLICATION_JSON).content(jsonRequestAttempt!!.write(attemptDTO)!!.json)
+    ).andReturn().response
+
+    // Then
+    assertThat(response.status).isEqualTo(HttpStatus.BAD_REQUEST.value())
+  }
 
 }
