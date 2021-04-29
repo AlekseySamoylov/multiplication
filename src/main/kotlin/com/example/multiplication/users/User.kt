@@ -1,4 +1,14 @@
 package com.example.multiplication.users
 
+import javax.persistence.Entity
+import javax.persistence.GeneratedValue
+import javax.persistence.Id
 
-data class User(val id: Long, val alias: String)
+
+@Entity(name = "users")
+data class User(
+  @Id
+  @GeneratedValue
+  var id: Long? = null,
+  var alias: String = ""
+)
