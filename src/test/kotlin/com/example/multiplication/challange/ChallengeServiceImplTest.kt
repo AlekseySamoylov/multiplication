@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.given
+import org.mockito.kotlin.verify
 
 
 @ExtendWith(MockitoExtension::class)
@@ -33,7 +35,6 @@ internal class ChallengeServiceImplTest {
   fun `Should save attempt to repository`() {
   }
 
-
   @Test
   fun `Should validate successful attempt`() {
     // Given
@@ -47,8 +48,8 @@ internal class ChallengeServiceImplTest {
       .build()
     given(userRepository!!.save(user))
       .willReturn(User(1, "john_doe"))
-    given(attemptRepository!!.save(challengeAttemptToAccept))
-      .willReturn(challengeAttemptToAccept)
+    given(attemptRepository!!.save(challengeAttemptToAccept.toBuilder().user(User(1, "john_doe")).build()))
+      .willReturn(challengeAttemptToAccept.toBuilder().user(User(1, "john_doe")).correct(true).build())
 
     val challengeService = ChallengeServiceImpl(userRepository!!, attemptRepository!!)
     val challengeAttemptDTO = ChallengeAttemptDTO(33, 11, "john_doe", 363)
@@ -58,6 +59,11 @@ internal class ChallengeServiceImplTest {
 
     // Then
     assertThat(challengeAttempt.correct).isTrue
+    assertThat(challengeAttempt.user).isEqualTo(User(1, "john_doe"))
+    verify(userRepository!!).save(user)
+    verify(attemptRepository!!).save(
+      challengeAttemptToAccept.toBuilder().user(User(1, "john_doe")).correct(true).build()
+    )
   }
 
   @Test
@@ -71,5 +77,21 @@ internal class ChallengeServiceImplTest {
 
     // Then
     assertThat(challengeAttempt.correct).isFalse
+  }
+
+  @Test
+  fun `Should return last user attempts`() {
+    // Given
+    val challengeService = ChallengeServiceImpl(userRepository!!, attemptRepository!!)
+    val userAlias = "john"
+    val challengeAttemptsOfUser = listOf(ChallengeAttempt(1), ChallengeAttempt(2))
+    given(attemptRepository!!.findTop10ByUserAliasOrderByIdDesc(eq(userAlias)))
+      .willReturn(challengeAttemptsOfUser)
+
+    // When
+    val result = challengeService.getLastAttemptsForUserAlias(userAlias)
+
+    // Then
+    assertThat(result).isEqualTo(challengeAttemptsOfUser)
   }
 }

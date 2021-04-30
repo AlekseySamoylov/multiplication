@@ -18,6 +18,10 @@ class ChallengeAttempt(
   var correct: Boolean? = null,
 ) {
 
+  fun toBuilder(): Builder {
+    return Builder(id, user, factorA, factorB, resultAttempt, correct)
+  }
+
   class Builder(
     var id: Long? = null,
     var user: User? = null,

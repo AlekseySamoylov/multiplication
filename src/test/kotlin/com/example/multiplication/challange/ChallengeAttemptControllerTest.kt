@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 
 
@@ -24,12 +25,18 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 open class ChallengeAttemptControllerTest {
   @MockBean
   private var challengeService: ChallengeService? = null
+
   @Autowired
   private var mvc: MockMvc? = null
+
   @Autowired
   private var jsonRequestAttempt: JacksonTester<ChallengeAttemptDTO>? = null
+
   @Autowired
   private var jsonResultAttempt: JacksonTester<ChallengeAttempt>? = null
+
+  @Autowired
+  private var jsonResultAttemptList: JacksonTester<List<ChallengeAttempt>>? = null
 
   @Test
   fun `Should validate successful POST result`() {
@@ -39,7 +46,7 @@ open class ChallengeAttemptControllerTest {
     val attemptDTO = ChallengeAttemptDTO(50, 70, user.alias, 3500)
     val expectedResponse = ChallengeAttempt(attemptId, user, 50, 70, 3500, true)
     given(challengeService!!.verifyAttempt(eq(attemptDTO)))
-      .willReturn(expectedResponse)
+      .willReturn(expectedResponse.toBuilder().correct(true).build())
 
     // When
     val response = mvc!!.perform(
@@ -68,6 +75,28 @@ open class ChallengeAttemptControllerTest {
 
     // Then
     assertThat(response.status).isEqualTo(HttpStatus.BAD_REQUEST.value())
+  }
+
+  @Test
+  fun `Should return last attempts for user`() {
+    // Given
+    val userAlias = "john"
+    val attempts = listOf(ChallengeAttempt(1), ChallengeAttempt(2))
+    given(challengeService!!.getLastAttemptsForUserAlias(eq(userAlias)))
+      .willReturn(attempts)
+
+    // When
+    val response = mvc!!.perform(
+      get("/attempts/?alias=john")
+    ).andReturn().response
+
+    // Then
+    assertThat(response.status).isEqualTo(HttpStatus.OK.value())
+    assertThat(response.contentAsString).isEqualTo(
+      jsonResultAttemptList!!.write(
+        attempts
+      ).json
+    )
   }
 
 }

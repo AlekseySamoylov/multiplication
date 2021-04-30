@@ -15,17 +15,29 @@ class ChallengeServiceImpl(
     log.debug("Verify attempt {}", resultAttempt)
     val result = resultAttempt.factorA * resultAttempt.factorB
     val correct = resultAttempt.guess == result
-    val user = User()
-    user.alias = resultAttempt.userAlias
-    userRepository.save(user)
+    val userOptional = userRepository.findByAlias(resultAttempt.userAlias)
+    val savedUser = if (userOptional.isPresent) {
+      val user = userOptional.get()
+      log.debug("User found {}", user)
+      user
+    } else {
+      val user = User()
+      user.alias = resultAttempt.userAlias
+      log.debug("User was not found, created new one {}", user)
+      userRepository.save(user)
+    }
     val attempt = ChallengeAttempt.Builder()
-      .user(user)
+      .user(savedUser)
       .factorA(resultAttempt.factorA)
       .factorB(resultAttempt.factorB)
       .resultAttempt(resultAttempt.guess)
       .correct(correct)
       .build()
-    val savedAttempt = attemptRepository.save(attempt)
-    return savedAttempt
+    return attemptRepository.save(attempt)
+  }
+
+  override fun getLastAttemptsForUserAlias(userAlias: String): List<ChallengeAttempt> {
+    log.debug("Search last 10 attempts by alias {}", userAlias)
+    return attemptRepository.findTop10ByUserAliasOrderByIdDesc(userAlias)
   }
 }

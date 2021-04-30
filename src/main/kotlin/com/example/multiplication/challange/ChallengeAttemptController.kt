@@ -2,10 +2,7 @@ package com.example.multiplication.challange
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
 
 
@@ -18,5 +15,11 @@ class ChallengeAttemptController(private val challengeService: ChallengeService)
   fun postResult(@RequestBody @Valid challengeAttemptDTO: ChallengeAttemptDTO): ResponseEntity<ChallengeAttempt> {
     log.debug("Attempt posted {}", challengeAttemptDTO)
     return ResponseEntity.ok(challengeService.verifyAttempt(challengeAttemptDTO))
+  }
+
+  @GetMapping
+  fun getLastAttemptsForUserAlias(@RequestParam alias: String): ResponseEntity<List<ChallengeAttempt>> {
+    log.debug("Get last attempts for user alias {}", alias)
+    return ResponseEntity.ok(challengeService.getLastAttemptsForUserAlias(alias))
   }
 }
